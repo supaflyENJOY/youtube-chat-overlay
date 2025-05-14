@@ -1,0 +1,34 @@
+{
+  "build": {
+    "frontendDist": "../src"
+  },
+  "bundle": {
+    "active": false
+  },
+  "productName": "youtube-chat-overlay",
+  "version": "1.0.0",
+  "identifier": "in.petrosyan.youtube.chat",
+  "plugins": {},
+  "app": {
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    },
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "YouTube Chat",
+        "width": 400,
+        "height": 600,
+        "transparent": true,
+        "alwaysOnTop": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "dangerousDisableAssetCspModification": true,
+      "csp": null
+    }
+  }
+}

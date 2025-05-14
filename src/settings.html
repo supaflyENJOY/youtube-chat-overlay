@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Chat Overlay Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Settings</h1>
+    
+    <div class="setting-group">
+      <div class="setting-title">Chat Settings</div>
+      <div class="setting-control">
+        <label for="chat-type">Chat type</label>
+        <select id="chat-type">
+          <option value="full">Full chat</option>
+          <option value="top">Top chat</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="setting-group">
+      <div class="setting-title">Font Size</div>
+      <div class="setting-control">
+        <div class="font-size-controls">
+          <button id="decrease-font">-</button>
+          <input type="number" class="font-size-value" id="font-size-value" min="10" max="500" step="5" value="100">
+          <span>%</span>
+          <button id="increase-font">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-title">Message Font Name (from Google Fonts)</div>
+      <div class="setting-control">
+        <input type="text" id="message-font-name" placeholder="e.g., Roboto, Open Sans">
+      </div>
+        <span id="message-font-name-error" style="color: red; font-size: 0.8em; display: none;">Font not found on Google Fonts or invalid format.</span>
+      <small>default: Imprima</small>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-title">Author Font Name (from Google Fonts)</div>
+      <div class="setting-control">
+        <input type="text" id="author-font-name" placeholder="e.g., Changa One, Oswald">
+      </div>
+        <span id="author-font-name-error" style="color: red; font-size: 0.8em; display: none;">Font not found on Google Fonts or invalid format.</span>
+      <small>default: Changa One</small>
+    </div>
+    
+    <div class="setting-group">
+      <div class="setting-title">Background Color</div>
+      <div class="setting-control">
+        <input type="color" id="background-color" value="#000000">
+        <input type="range" id="background-opacity" min="0" max="100" value="0">
+        <span id="opacity-value">0%</span>
+      </div>
+      <small>Default: transparent</small>
+    </div>
+    
+    <div class="setting-group">
+      <div class="setting-title">Message Text Color</div>
+      <div class="setting-control">
+        <input type="color" id="message-color" value="#FFFFFF">
+        <span id="message-color-value">#FFFFFF</span>
+      </div>
+      <small>Default: white (#FFFFFF)</small>
+    </div>
+    
+    <div class="setting-group">
+      <div class="setting-title">Author Name Color</div>
+      <div class="setting-control">
+        <input type="color" id="author-color" value="#CCCCCC">
+        <span id="author-color-value">#CCCCCC</span>
+      </div>
+      <small>Default: light gray (#CCCCCC)</small>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const { invoke } = window.__TAURI__.core;
+      const { appWindow } = window.__TAURI__.window;
+
+      const chatTypeSelect = document.getElementById('chat-type');
+      const decreaseFontBtn = document.getElementById('decrease-font');
+      const increaseFontBtn = document.getElementById('increase-font');
+      const fontSizeValue = document.getElementById('font-size-value');
+      const messageFontNameInput = document.getElementById('message-font-name');
+      const messageFontNameError = document.getElementById('message-font-name-error');
+      const backgroundColorInput = document.getElementById('background-color');
+      const backgroundOpacityInput = document.getElementById('background-opacity');
+      const opacityValueDisplay = document.getElementById('opacity-value');
+      const authorFontNameInput = document.getElementById('author-font-name');
+      const authorFontNameError = document.getElementById('author-font-name-error');
+      const messageColorInput = document.getElementById('message-color');
+      const authorColorInput = document.getElementById('author-color');
+      const messageColorValue = document.getElementById('message-color-value');
+      const authorColorValue = document.getElementById('author-color-value');
+
+      invoke('get_app_settings').then((settings) => {
+        chatTypeSelect.value = settings.is_full_chat ? 'full' : 'top';
+        fontSizeValue.value = Math.round(settings.font_size * 100);
+        messageFontNameInput.value = settings.message_font || '';
+        authorFontNameInput.value = settings.author_font || '';
+        
+        if (settings.background_color) {
+          const rgba = settings.background_color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\)/);
+          if (rgba) {
+            const [_, r, g, b, a = '1'] = rgba;
+            const hexColor = rgbToHex(parseInt(r), parseInt(g), parseInt(b));
+            backgroundColorInput.value = hexColor;
+            const opacity = Math.round(parseFloat(a) * 100);
+            backgroundOpacityInput.value = opacity;
+            opacityValueDisplay.textContent = `${opacity}%`;
+          }
+        }
+
+        if (settings.message_color) {
+          const rgba = settings.message_color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\)/);
+          if (rgba) {
+            const [_, r, g, b] = rgba;
+            const hexColor = rgbToHex(parseInt(r), parseInt(g), parseInt(b));
+            messageColorInput.value = hexColor;
+          } else if (settings.message_color.startsWith('#')) {
+            messageColorInput.value = settings.message_color;
+          } else {
+            messageColorInput.value = '#FFFFFF';
+          }
+          messageColorValue.textContent = messageColorInput.value;
+        }
+
+        if (settings.author_color) {
+          const rgba = settings.author_color.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([0-9.]+))?\\)/);
+          if (rgba) {
+            const [_, r, g, b] = rgba;
+            const hexColor = rgbToHex(parseInt(r), parseInt(g), parseInt(b));
+            authorColorInput.value = hexColor;
+          } else if (settings.author_color.startsWith('#')) {
+            authorColorInput.value = settings.author_color;
+          } else {
+            authorColorInput.value = '#CCCCCC';
+          }
+          authorColorValue.textContent = authorColorInput.value;
+        }
+      });
+
+      chatTypeSelect.addEventListener('change', () => {
+        const isFullChat = chatTypeSelect.value === 'full';
+        invoke('toggle_full_chat', { isFullChat: isFullChat });
+      });
+
+      function updateFontSize(newSize) {
+        invoke('set_font_size_value', { fontSize: newSize / 100 }).then((updatedSize) => {
+          fontSizeValue.value = Math.round(updatedSize * 100);
+        });
+      }
+
+      decreaseFontBtn.addEventListener('click', () => {
+        const currentValue = parseInt(fontSizeValue.value);
+        updateFontSize(Math.max(10, currentValue - 5));
+      });
+
+      increaseFontBtn.addEventListener('click', () => {
+        const currentValue = parseInt(fontSizeValue.value);
+        updateFontSize(Math.min(500, currentValue + 5));
+      });
+
+      fontSizeValue.addEventListener('change', () => {
+        let value = parseInt(fontSizeValue.value);
+        
+        if (isNaN(value)) value = 100;
+        value = Math.max(10, Math.min(500, value));
+        fontSizeValue.value = value;
+        
+        updateFontSize(value);
+      });
+
+      async function validateFontName(name, errorElement) {
+          if (name === '') return { valid: true };
+
+          const formatRegex = /^[a-zA-Z0-9 ]+$/;
+          if (!formatRegex.test(name)) {
+              return { valid: false, message: 'Invalid format. Use only letters, numbers, and spaces.' };
+          }
+
+          const fontQuery = name.replace(/ /g, '+');
+          const url = `https://fonts.googleapis.com/css2?family=${fontQuery}`;
+
+          try {
+              errorElement.textContent = 'Checking font...';
+              errorElement.style.color = '#888';
+              errorElement.style.display = 'inline';
+
+              const response = await fetch(url, { method: 'HEAD' });
+
+              if (response.ok) {
+                  return { valid: true };
+              } else if (response.status === 400) {
+                  return { valid: false, message: 'Font not found on Google Fonts.' };
+              } else {
+                  console.warn(`Google Fonts check returned status ${response.status} for font "${name}"`);
+                  return { valid: false, warning: 'Could not verify font existence.' };
+              }
+          } catch (error) {
+              console.error('Error checking font with Google Fonts API:', error);
+              return { valid: false, warning: 'Could not verify font.' };
+          } finally {
+              if (errorElement.textContent === 'Checking font...') {
+                  errorElement.style.display = 'none';
+              } else {
+                  errorElement.style.color = 'red';
+              }
+          }
+      }
+
+      async function handleFontInputChange(inputElement, errorElement, commandName) {
+          const fontName = inputElement.value.trim();
+          inputElement.disabled = true;
+
+          const validationResult = await validateFontName(fontName, errorElement);
+
+          inputElement.disabled = false;
+
+          if (validationResult.valid || validationResult.warning) {
+              errorElement.style.display = validationResult.warning ? 'inline' : 'none';
+              errorElement.textContent = validationResult.warning || '';
+              errorElement.style.color = validationResult.warning ? '#888' : 'red';
+              inputElement.classList.remove('input-error');
+
+              invoke(commandName, { fontName: fontName === '' ? null : fontName })
+                  .catch(err => console.error(`Failed to set ${commandName}:`, err));
+
+          } else {
+              errorElement.textContent = validationResult.message || 'Font not found or invalid format.';
+              errorElement.style.color = 'red';
+              errorElement.style.display = 'block';
+              inputElement.classList.add('input-error');
+          }
+      }
+
+      messageFontNameInput.addEventListener('change', () => {
+          handleFontInputChange(messageFontNameInput, messageFontNameError, 'set_message_font_name');
+      });
+
+      authorFontNameInput.addEventListener('change', () => {
+          handleFontInputChange(authorFontNameInput, authorFontNameError, 'set_author_font_name');
+      });
+
+      function rgbToHex(r, g, b) {
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+      }
+
+      function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null;
+      }
+
+      function updateBackgroundColor() {
+        const hexColor = backgroundColorInput.value;
+        const opacity = backgroundOpacityInput.value / 100;
+        const rgb = hexToRgb(hexColor);
+        
+        if (rgb) {
+          const rgba = `rgba(${rgb.r},${rgb.g},${rgb.b},${opacity})`;
+          invoke('set_background_color', { color: rgba });
+        }
+      }
+
+      backgroundColorInput.addEventListener('input', function() {
+        updateBackgroundColor();
+      });
+
+      backgroundOpacityInput.addEventListener('input', function() {
+        opacityValueDisplay.textContent = `${this.value}%`;
+        updateBackgroundColor();
+      });
+
+      messageColorInput.addEventListener('input', () => {
+        const color = messageColorInput.value;
+        messageColorValue.textContent = color;
+        invoke('set_message_color', { color: color });
+      });
+
+      authorColorInput.addEventListener('input', () => {
+        const color = authorColorInput.value;
+        authorColorValue.textContent = color;
+        invoke('set_author_color', { color: color });
+      });
+    });
+  </script>
+</body>
+</html>

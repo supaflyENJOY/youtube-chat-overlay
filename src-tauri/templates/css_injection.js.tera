@@ -1,0 +1,17 @@
+if (window.trustedTypes && window.trustedTypes.createPolicy) {
+  window.trustedTypes.createPolicy('default', {
+    createHTML: string => string,
+    createScriptURL: string => string,
+    createScript: string => string,
+  });
+}
+var style = document.createElement('style');
+style.type = 'text/css';
+style.id = 'dynamic-chat-style';
+
+style.innerHTML = `{{ css_content }}`;
+let existingStyle = document.getElementById('dynamic-chat-style');
+if (existingStyle) {
+    existingStyle.remove();
+}
+document.head.appendChild(style);
