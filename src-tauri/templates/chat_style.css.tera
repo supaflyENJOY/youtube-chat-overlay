@@ -255,3 +255,7 @@ yt-reaction-control-panel-view-model {
 yt-live-chat-viewer-engagement-message-renderer {
   display: none !important;
 }
+
+#before-content-buttons {
+  display: none !important;
+}
