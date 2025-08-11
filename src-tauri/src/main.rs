@@ -1,12 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::sync::Mutex;
-use std::time::Duration;
 use tauri::menu::{CheckMenuItem, MenuBuilder, MenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::Manager;
 use tauri::WebviewWindowBuilder;
-use std::{fs, thread};
+use std::fs;
 use std::path::PathBuf;
 use serde::{Serialize, Deserialize};
 use tauri_plugin_dialog::DialogExt;
@@ -298,23 +297,6 @@ fn set_font_size(window: &tauri::WebviewWindow, font_size: f32) -> Result<(), ta
     "#, font_size).as_str())
 }
 
-fn inject_css_with_retry(webview_window: &tauri::WebviewWindow, css_script: &str) -> Result<(), String> {
-    const MAX_RETRIES: u32 = 10;
-    const RETRY_DELAY_MS: u64 = 100;
-
-    for attempt in 1..=MAX_RETRIES {
-        match webview_window.eval(css_script) {
-            Ok(_) => return Ok(()),
-            Err(e) => {
-                if attempt == MAX_RETRIES {
-                    return Err(format!("Failed to inject CSS after {} attempts: {}", MAX_RETRIES, e));
-                } 
-                thread::sleep(Duration::from_millis(RETRY_DELAY_MS));
-            }
-        }
-    }
-    Err("Failed to inject CSS: max retries exceeded".to_string())
-}
 
 fn set_window_unlocked(window: &tauri::WebviewWindow) -> Result<(), tauri::Error> {
     window.set_ignore_cursor_events(false)?;
@@ -439,11 +421,11 @@ fn main() {
                     }
                 };
                 
-                if let Err(e) = inject_css_with_retry(&webview_window, &css_injection_script) {
+                if let Err(e) = webview_window.eval(&css_injection_script) {
                     // show messagebox to user
                     let handle = window.app_handle();
-                    handle.dialog().message(e.to_string()).title("Failed to inject CSS").blocking_show(); 
-                    eprintln!("{}", e);
+                    handle.dialog().message(e.to_string()).title("Failed to inject CSS").blocking_show();
+                    eprintln!("Failed to inject CSS: {}", e);
                 }
 
             if state.is_full_chat {

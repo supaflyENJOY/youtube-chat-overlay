@@ -29,8 +29,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.get_version.outputs.version }}-${{ github.run_number }}
-          release_name: Release v${{ steps.get_version.outputs.version }}-${{ github.run_number }}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: Release v${{ steps.get_version.outputs.version }}
           body: |
             Automated release for version ${{ steps.get_version.outputs.version }}
           draft: true
@@ -92,7 +92,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: ./src-tauri/target/x86_64-pc-windows-msvc/release/youtube-chat-overlay.exe
-          asset_name: youtube-chat-overlay_v${{ steps.get_version.outputs.version }}_x64.exe
+          asset_name: youtube-chat-overlay_x64.exe
           asset_content_type: application/vnd.microsoft.portable-executable
 
   publish-release:

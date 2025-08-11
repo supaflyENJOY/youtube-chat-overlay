@@ -1,3 +1,4 @@
+
 if (window.trustedTypes && window.trustedTypes.createPolicy) {
   window.trustedTypes.createPolicy('default', {
     createHTML: string => string,
@@ -5,13 +6,44 @@ if (window.trustedTypes && window.trustedTypes.createPolicy) {
     createScript: string => string,
   });
 }
+
 var style = document.createElement('style');
 style.type = 'text/css';
 style.id = 'dynamic-chat-style';
-
 style.innerHTML = `{{ css_content }}`;
-let existingStyle = document.getElementById('dynamic-chat-style');
-if (existingStyle) {
-    existingStyle.remove();
+
+function applyStyle() {
+    if (document.head) {
+        let existingStyle = document.getElementById('dynamic-chat-style');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+        document.head.appendChild(style);
+        console.log('CSS styles applied');
+        return true;
+    }
+    return false;
 }
-document.head.appendChild(style);
+
+// Try to apply immediately
+if (!applyStyle()) {
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyStyle);
+    } else {
+        // Document is already loaded, but head might not exist yet
+        // Use polling as fallback
+        let retries = 0;
+        const maxRetries = 50; // 5 seconds max
+        const interval = setInterval(function() {
+            retries++;
+            
+            if (applyStyle()) {
+                clearInterval(interval);
+            } else if (retries >= maxRetries) {
+                console.error('Failed to apply CSS: document.head not available');
+                clearInterval(interval);
+            }
+        }, 100);
+    }
+}
